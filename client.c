@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <errno.h>
+
 int sockfd;
 
 int setaddr(struct sockaddr_in *addr,char inaddr[],u_int32_t a,short sinport) {
@@ -19,8 +21,10 @@ memset((void*)addr,0,sizeof(addr));
 if(inaddr!=NULL)
 {h = gethostbyname(inaddr);
 if(h!=NULL)
-addr->sin_addr.s_addr=*(u_int32_t*)h->h_addr_list[0];
-}
+{//addr->sin_addr.s_addr=*(u_int32_t*)h->h_addr_list[0];
+inet_pton(AF_INET, inaddr, &addr->sin_addr);
+printf("Address \n");
+}}
 else
 addr->sin_addr.s_addr=a;
 addr->sin_family = AF_INET ;
@@ -45,7 +49,7 @@ execlp("gnome-terminal","gnome-terminal","-e",val,NULL);}
 
 int main(int argv,char *args[])
 {char text[100];
-int j,pid;
+int j,pid,i;
 signal(SIGQUIT,end_proc);
 signal(SIGINT,end_proc);
 signal(SIGHUP,end_proc);
@@ -56,16 +60,26 @@ if((pid=fork())==0)
 start_chat(args[2],args[3]);
 exit(1);
 }
-setaddr(&loc,NULL,INADDR_ANY,0);
-if (sockfd=socket(PF_INET,SOCK_STREAM,0) < 0)
-   {printf ("error1 ...\n"); /*exit(1);*/}
-/*if (bind(sockfd,(struct sockaddr *)&loc,sizeof(loc))<0)
-   {printf ("error2 ...\n"); exit(1);}*/
-setaddr(&rem,args[1],0,atoi(args[2]));
-printf("con %d\n",connect(sockfd,(struct sockaddr *)&rem,sizeof(rem)));
-do{
+int val;
+do{fflush(stdin);
 fgets(text,100,stdin);
-printf("sock %d\n",sockfd);
+for(i=0;i<20;i++)
+{setaddr(&loc,NULL,INADDR_ANY,0);
+if ((sockfd=socket(PF_INET,SOCK_STREAM,0)) < 0)
+   {printf ("error1 ...\n"); continue;}
+printf("1%s\n",strerror(errno));
+if ((bind(sockfd,(struct sockaddr *)&loc,sizeof(loc)))<0)
+   {printf ("error2 ...\n"); continue;}
+setaddr(&rem,args[1],0,atoi(args[2]));
+printf("con %d\n",val=connect(sockfd,(struct sockaddr *)&rem,sizeof(rem)));
+printf("2%s\n",strerror(errno));
+if(val<0)
+continue;
 write(sockfd,text,strlen(text));
-}while(strcmp(text,"/exit\n")!=0);
+printf("sock %d %s",sockfd,text);
+//text[strlen(text-1)]='\0';
+close(sockfd);
+break;
+}
+}while(strcmp(text,"~exit\n")!=0);
 return 0;}

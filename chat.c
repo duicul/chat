@@ -10,7 +10,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
+#include <errno.h>
+#define BUFF_SIZE 200
 int setaddr(struct sockaddr_in *addr,char inaddr[],u_int32_t a,short sinport) {
 struct hostent *h;
 memset((void*)addr,0,sizeof(addr));
@@ -29,36 +30,47 @@ return 0 ;
 void readline(int sock,char buf[])
 {char c;
 int i=0;
-while(read(sock,&c,1)>0&&i<strlen(buf))
-{buf[i++]=c;
+while(read(sock,&c,1)>0&&i<BUFF_SIZE)
+{printf("%c",c);
+buf[i++]=c;
+if(c=='\n')
+break;
 }
 buf[i]='\0';
 }
 
 int main(int argv,char *args[])
 {char name[30],line[200];
-int j,t=getpid();
-printf("pid2 %d\n",t);
+int j;
 printf("%s\n",args[1]);
-//gets(name);
+//fgets(name,30,stdin);
 struct sockaddr_in loc,rem;
 socklen_t rlen;
 setaddr(&loc,NULL,INADDR_ANY,atoi(args[1]));
 int sockfd, newsockfd;
+printf("Messsages:\n");
 if ((sockfd=socket(AF_INET,SOCK_STREAM,0)) < 0)
    {printf ("error1 ...\n"); /*exit(1);*/}
-if (bind(sockfd,(struct sockaddr *)&loc,sizeof(loc))<0)
+printf("1%s\n",strerror(errno));
+if ((bind(sockfd,(struct sockaddr *)&loc,sizeof(loc)))<0)
    {printf ("error2 ...\n"); /*exit(1);*/}
+printf("2%s\n",strerror(errno));
 if (listen(sockfd,10) < 0)
    {printf ("error3 ...\n"); /*exit(1);*/}
-printf("Message board\n");
+printf("3%s\n",strerror(errno));
 for (;;)
 {newsockfd=accept(sockfd,(struct sockaddr *)&rem,&rlen);/* blocare pentru asteptare cereri*/
- if (newsockfd < 0) 
+ printf("4%s\n",strerror(errno)); 
+if (newsockfd < 0) 
    printf ("error4 ...\n"); 
   else
+  {
+  if(fork()==0)
   {readline(newsockfd,line); /*deservire cerere*/
-  printf("%s",line);}
-close (newsockfd);
+  printf("line: %s",line);
+if(strcmp(line,"~exit\n")==0)
+ printf("Finish\n");
+  close (newsockfd);  
+}}
 }
 return 0;}

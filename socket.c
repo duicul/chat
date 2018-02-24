@@ -1,8 +1,16 @@
-#include <stdio.h>
+#include <sys/types.h>         
 #include <sys/socket.h>
+#include <sys/types.h>         
+#include <sys/socket.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <netinet/in.h>
 #include <string.h>
+#include <ctype.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <time.h>
 #define PORT 20232
 #define DEL 2000 
