@@ -1,6 +1,6 @@
-#include <sys/types.h>         
+#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/types.h>         
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <signal.h>
 #include <unistd.h>
@@ -12,8 +12,24 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
-
+#define BUFF_SIZE 200
 int sockfd;
+
+void read_data(int sock,char buf[])
+{char c;
+int i=0,n;
+read(sock,&n,sizeof(int));
+while(read(sock,&c,1)>0&&i<BUFF_SIZE&&i<n)
+{printf("%c",c);
+buf[i++]=c;}
+buf[i]='\0';}
+
+void send_data(int sock,char buf[],int len)
+{char c;
+int i=0,n=len;
+write(sock,&n,sizeof(int));
+while(write(sock,&buf[i++],1)>0&&i<BUFF_SIZE&&i<n);
+buf[i]='\0';}
 
 int setaddr(struct sockaddr_in *addr,char inaddr[],u_int32_t a,short sinport) {
 struct hostent *h;
@@ -50,12 +66,8 @@ execlp("gnome-terminal","gnome-terminal","-e",val,NULL);}
 int main(int argv,char *args[])
 {char text[100];
 int j,pid,i;
-signal(SIGQUIT,end_proc);
-signal(SIGINT,end_proc);
-signal(SIGHUP,end_proc);
-signal(SIGTERM,end_proc);
 struct sockaddr_in loc,rem;
-if((pid=fork())==0)
+if(argv>3&&(pid=fork())==0)
 {printf("args2 %s\n",args[2]);
 start_chat(args[2],args[3]);
 exit(1);
@@ -75,9 +87,8 @@ printf("con %d\n",val=connect(sockfd,(struct sockaddr *)&rem,sizeof(rem)));
 printf("2%s\n",strerror(errno));
 if(val<0)
 continue;
-write(sockfd,text,strlen(text));
+send_data(sockfd,text,strlen(text));
 printf("sock %d %s",sockfd,text);
-//text[strlen(text-1)]='\0';
 close(sockfd);
 break;
 }
